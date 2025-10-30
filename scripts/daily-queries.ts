@@ -4,7 +4,7 @@ import { getAllQueries, saveResponse, saveRankings } from '../lib/db';
 import { queryAndParseModel } from '../lib/ai-clients';
 import { AIModel } from '../types';
 
-const MODELS: AIModel[] = ['claude', 'gpt-4', 'gemini'];
+const MODELS: AIModel[] = ['claude', 'gpt-4'];
 
 /**
  * Run all queries for all models

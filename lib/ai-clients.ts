@@ -1,10 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk';
 import OpenAI from 'openai';
-import {
-  GenerativeModel,
-  GoogleGenerativeAI,
-  GoogleGenerativeAIFetchError,
-} from '@google/generative-ai';
 import { RankingItem } from '@/types';
 
 // Initialize AI clients
@@ -15,67 +10,6 @@ const anthropic = new Anthropic({
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY || '',
 });
-
-const GEMINI_KEY_ENV_VARS = [
-  'GEMINI_API_KEY',
-  'GOOGLE_AI_API_KEY',
-  'GOOGLE_API_KEY',
-  'GOOGLE_GENAI_API_KEY',
-  'NEXT_PUBLIC_GEMINI_API_KEY',
-  'NEXT_PUBLIC_GOOGLE_AI_API_KEY',
-  'NEXT_PUBLIC_GOOGLE_API_KEY',
-  'NEXT_PUBLIC_GOOGLE_GENAI_API_KEY',
-] as const;
-
-let genAI: GoogleGenerativeAI | null = null;
-const geminiModelCache = new Map<string, GenerativeModel>();
-
-const GEMINI_MODEL_CANDIDATES = [
-  'gemini-1.5-pro-latest',
-  'gemini-1.5-pro',
-  'gemini-pro',
-] as const;
-
-function resolveEnvValue(keys: readonly string[]): string | undefined {
-  for (const key of keys) {
-    const value = process.env[key];
-    if (typeof value === 'string' && value.trim()) {
-      return value.trim();
-    }
-  }
-
-  return undefined;
-}
-
-function getGeminiClient(): GoogleGenerativeAI {
-  if (!genAI) {
-    const geminiApiKey = resolveEnvValue(GEMINI_KEY_ENV_VARS);
-
-    if (!geminiApiKey) {
-      throw new Error(
-        `Missing Gemini API key. Set one of: ${GEMINI_KEY_ENV_VARS.join(', ')}.`
-      );
-    }
-
-    genAI = new GoogleGenerativeAI(geminiApiKey);
-  }
-
-  return genAI;
-}
-
-function getGeminiModel(modelName: string): GenerativeModel {
-  const cachedModel = geminiModelCache.get(modelName);
-  if (cachedModel) {
-    return cachedModel;
-  }
-
-  const model = getGeminiClient().getGenerativeModel({
-    model: modelName,
-  });
-
-  geminiModelCache.set(modelName, model);
-  return model;
-}
 
 /**
  * Create a structured prompt for ranking queries
@@ -166,63 +100,20 @@ export async function queryGPT4(question: string): Promise<string> {
 }
 
 /**
- * Query Gemini (Google) - Updated with new API key
- */
-export async function queryGemini(question: string): Promise<string> {
-  for (const modelName of GEMINI_MODEL_CANDIDATES) {
-    try {
-      const model = getGeminiModel(modelName);
-      const result = await model.generateContent({
-        contents: [
-          {
-            role: 'user',
-            parts: [{ text: createRankingPrompt(question) }],
-          },
-        ],
-      });
-      const response = await result.response;
-      return response.text();
-    } catch (error) {
-      if (
-        error instanceof GoogleGenerativeAIFetchError &&
-        error.status === 404
-      ) {
-        console.warn(
-          `Gemini model ${modelName} not available (404). Trying next candidate...`
-        );
-        continue;
-      }
-
-      console.error(`Error querying Gemini model ${modelName}:`, error);
-      throw error;
-    }
-  }
-
-  throw new Error(
-    `Gemini request failed: no configured model (${GEMINI_MODEL_CANDIDATES.join(
-      ', '
-    )}) is available.`
-  );
-}
-
-/**
  * Query all AI models with retry logic
  */
 export async function queryAllModels(question: string): Promise<{
   claude: string;
   'gpt-4': string;
-  gemini: string;
 }> {
   const results = await Promise.allSettled([
     retryWithBackoff(() => queryClaude(question), 3),
     retryWithBackoff(() => queryGPT4(question), 3),
-    retryWithBackoff(() => queryGemini(question), 3),
   ]);
 
   return {
     claude: results[0].status === 'fulfilled' ? results[0].value : '',
     'gpt-4': results[1].status === 'fulfilled' ? results[1].value : '',
-    gemini: results[2].status === 'fulfilled' ? results[2].value : '',
   };
 }
 
@@ -256,7 +147,7 @@ async function retryWithBackoff<T>(
  * Query a model and parse the response into rankings
  */
 export async function queryAndParseModel(
-  modelName: 'claude' | 'gpt-4' | 'gemini',
+  modelName: 'claude' | 'gpt-4',
   question: string
 ): Promise<{ response: string; rankings: RankingItem[] }> {
   let response: string;
@@ -268,22 +159,17 @@ export async function queryAndParseModel(
     case 'gpt-4':
       response = await retryWithBackoff(() => queryGPT4(question), 3);
       break;
-    case 'gemini':
-      response = await retryWithBackoff(() => queryGemini(question), 3);
-      break;
     default:
       throw new Error(`Unknown model: ${modelName}`);
   }
 
   const rankings = parseRankings(response);
 
-  // If parsing failed, try to use Claude to structure the response
+  // If parsing failed, log warning
   if (rankings.length === 0 && response) {
     console.warn(
       `Failed to parse rankings from ${modelName}, attempting fallback...`
     );
-    // For now, just return empty rankings
-    // In production, you might want to use another AI call to structure it
   }
 
   return { response, rankings };

@@ -48,7 +48,7 @@ export interface TimelinePoint {
 }
 
 // AI Model types
-export type AIModel = 'claude' | 'gpt-4' | 'gemini';
+export type AIModel = 'claude' | 'gpt-4';
 
 export interface AIModelConfig {
   name: string;
@@ -58,8 +58,8 @@ export interface AIModelConfig {
 
 // Categories
 export type QueryCategory =
-  | 'Food & Restaurants'
-  | 'Tech & Products'
-  | 'Politics & Society'
-  | 'Entertainment'
-  | 'Career & Education';
+  | 'Developer Tools'
+  | 'Business Tools'
+  | 'Consumer Tech'
+  | 'Services'
+  | 'Emerging Tech';

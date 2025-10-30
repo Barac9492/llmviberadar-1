@@ -30,11 +30,10 @@ export default function AboutPage() {
               Our Mission
             </h2>
             <p className="text-gray-700 leading-relaxed">
-              LLM Vibes Radar tracks and visualizes how different AI models
-              rank opinions on everything from burgers to political candidates.
-              Our goal is to reveal AI biases, help businesses understand their
-              AI visibility, and become a trusted source for AI-aggregated
-              recommendations.
+              LLM Vibes Radar tracks which brands and products AI models recommend.
+              We reveal which companies have the strongest &quot;AI mindshare&quot; and how
+              these recommendations change over time. Think of it as SEO for the AI age -
+              helping businesses understand their visibility in AI-powered recommendations.
             </p>
           </section>
 
@@ -49,8 +48,8 @@ export default function AboutPage() {
                   1. Daily Queries
                 </h3>
                 <p>
-                  We run the same questions across multiple AI models every 24
-                  hours, including Claude, GPT-4, and Gemini.
+                  We run product and service ranking questions across Claude Sonnet 4.5
+                  and GPT-4 Turbo every 24 hours to track which brands they recommend.
                 </p>
               </div>
               <div>
@@ -88,23 +87,17 @@ export default function AboutPage() {
             <h2 className="text-2xl font-bold text-gray-900 mb-4">
               AI Models We Track
             </h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="border border-gray-200 rounded-lg p-4">
-                <h3 className="font-semibold text-gray-900 mb-2">Claude</h3>
+                <h3 className="font-semibold text-gray-900 mb-2">Claude Sonnet 4.5</h3>
                 <p className="text-sm text-gray-600">
-                  Anthropic&apos;s Claude 3.5 Sonnet
+                  Anthropic&apos;s latest flagship model, released September 2025
                 </p>
               </div>
               <div className="border border-gray-200 rounded-lg p-4">
-                <h3 className="font-semibold text-gray-900 mb-2">GPT-4</h3>
+                <h3 className="font-semibold text-gray-900 mb-2">GPT-4 Turbo</h3>
                 <p className="text-sm text-gray-600">
-                  OpenAI&apos;s GPT-4 Turbo
-                </p>
-              </div>
-              <div className="border border-gray-200 rounded-lg p-4">
-                <h3 className="font-semibold text-gray-900 mb-2">Gemini</h3>
-                <p className="text-sm text-gray-600">
-                  Google&apos;s Gemini Pro
+                  OpenAI&apos;s advanced model with extended context
                 </p>
               </div>
             </div>
@@ -119,29 +112,29 @@ export default function AboutPage() {
               <div className="flex items-start">
                 <span className="text-blue-600 mr-2">•</span>
                 <p>
-                  <strong>AI Researchers & Journalists</strong> - Track bias
-                  patterns and discover stories
+                  <strong>Product & Marketing Teams</strong> - Track your brand&apos;s AI visibility
+                  and monitor competitive positioning
                 </p>
               </div>
               <div className="flex items-start">
                 <span className="text-blue-600 mr-2">•</span>
                 <p>
-                  <strong>Businesses</strong> - Monitor how AIs perceive your
-                  brand or products
+                  <strong>Investors & Analysts</strong> - Identify which brands are winning
+                  AI mindshare before it shows in market metrics
                 </p>
               </div>
               <div className="flex items-start">
                 <span className="text-blue-600 mr-2">•</span>
                 <p>
-                  <strong>Consumers</strong> - Get aggregated AI
-                  recommendations for better decision-making
+                  <strong>Developers & Founders</strong> - Optimize your product for AI
+                  recommendation engines and track AI SEO performance
                 </p>
               </div>
               <div className="flex items-start">
                 <span className="text-blue-600 mr-2">•</span>
                 <p>
-                  <strong>Curious Public</strong> - Explore entertaining AI
-                  opinion trends
+                  <strong>Tech Enthusiasts</strong> - Discover which products AI models
+                  consistently recommend and compare their preferences
                 </p>
               </div>
             </div>
@@ -209,7 +202,7 @@ export default function AboutPage() {
       <footer className="bg-white border-t border-gray-200 mt-16">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 text-center text-gray-600">
           <p>
-            LLM Vibes Radar - Tracking AI opinions across multiple models
+            LLM Vibes Radar - Tracking Brand AI Mindshare Across Leading Models
           </p>
         </div>
       </footer>
