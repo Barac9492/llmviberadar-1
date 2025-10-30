@@ -1,6 +1,10 @@
 import Anthropic from '@anthropic-ai/sdk';
 import OpenAI from 'openai';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import {
+  GenerativeModel,
+  GoogleGenerativeAI,
+  GoogleGenerativeAIFetchError,
+} from '@google/generative-ai';
 import { RankingItem } from '@/types';
 
 // Initialize AI clients
@@ -24,6 +28,27 @@ const GEMINI_KEY_ENV_VARS = [
 ] as const;
 
 let genAI: GoogleGenerativeAI | null = null;
+const geminiModelCache = new Map<string, GenerativeModel>();
+let geminiApiKey: string | null = null;
+const unavailableGeminiModels = new Set<string>();
+
+const GEMINI_MODEL_LIST_ENDPOINT =
+  'https://generativelanguage.googleapis.com/v1beta/models';
+const GEMINI_MODEL_LIST_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+const GEMINI_MODEL_LIST_ERROR_CACHE_TTL_MS = 60 * 1000; // 1 minute
+
+type GeminiModelListCache = {
+  ids: string[];
+  expiresAt: number;
+};
+
+let geminiModelListCache: GeminiModelListCache | null = null;
+
+const GEMINI_MODEL_CANDIDATES = [
+  'gemini-1.5-pro-latest',
+  'gemini-1.5-pro',
+  'gemini-pro',
+] as const;
 
 function resolveEnvValue(keys: readonly string[]): string | undefined {
   for (const key of keys) {
@@ -36,20 +61,139 @@ function resolveEnvValue(keys: readonly string[]): string | undefined {
   return undefined;
 }
 
+function getGeminiApiKey(): string {
+  if (geminiApiKey) {
+    return geminiApiKey;
+  }
+
+  const resolvedKey = resolveEnvValue(GEMINI_KEY_ENV_VARS);
+
+  if (!resolvedKey) {
+    throw new Error(
+      `Missing Gemini API key. Set one of: ${GEMINI_KEY_ENV_VARS.join(', ')}.`
+    );
+  }
+
+  geminiApiKey = resolvedKey;
+  return geminiApiKey;
+}
+
 function getGeminiClient(): GoogleGenerativeAI {
   if (!genAI) {
-    const geminiApiKey = resolveEnvValue(GEMINI_KEY_ENV_VARS);
-
-    if (!geminiApiKey) {
-      throw new Error(
-        `Missing Gemini API key. Set one of: ${GEMINI_KEY_ENV_VARS.join(', ')}.`
-      );
-    }
-
-    genAI = new GoogleGenerativeAI(geminiApiKey);
+    genAI = new GoogleGenerativeAI(getGeminiApiKey());
   }
 
   return genAI;
+}
+
+function getGeminiModel(modelName: string): GenerativeModel {
+  const cachedModel = geminiModelCache.get(modelName);
+  if (cachedModel) {
+    return cachedModel;
+  }
+
+  const model = getGeminiClient().getGenerativeModel({
+    model: modelName,
+  });
+
+  geminiModelCache.set(modelName, model);
+  return model;
+}
+
+function parseGeminiModelId(modelName?: string): string | null {
+  if (!modelName) {
+    return null;
+  }
+
+  const parts = modelName.split('/');
+  const parsed = parts[parts.length - 1];
+
+  return parsed?.trim() ? parsed.trim() : null;
+}
+
+async function getAvailableGeminiModelIds(
+  forceRefresh: boolean = false
+): Promise<string[]> {
+  const now = Date.now();
+
+  if (!forceRefresh && geminiModelListCache && geminiModelListCache.expiresAt > now) {
+    return geminiModelListCache.ids;
+  }
+
+  const url = new URL(GEMINI_MODEL_LIST_ENDPOINT);
+  url.searchParams.set('key', getGeminiApiKey());
+
+  try {
+    const response = await fetch(url.toString());
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.warn(
+        `Failed to list Gemini models (${response.status} ${response.statusText}): ${errorText}`
+      );
+      geminiModelListCache = {
+        ids: [],
+        expiresAt: now + GEMINI_MODEL_LIST_ERROR_CACHE_TTL_MS,
+      };
+      return [];
+    }
+
+    const data = (await response.json()) as {
+      models?: { name?: string }[];
+    };
+
+    const ids =
+      data.models
+        ?.map((model) => parseGeminiModelId(model.name))
+        .filter((modelName): modelName is string => Boolean(modelName)) ?? [];
+
+    geminiModelListCache = {
+      ids,
+      expiresAt: now + GEMINI_MODEL_LIST_CACHE_TTL_MS,
+    };
+
+    return ids;
+  } catch (error) {
+    console.warn('Failed to fetch Gemini model list:', error);
+    geminiModelListCache = {
+      ids: [],
+      expiresAt: now + GEMINI_MODEL_LIST_ERROR_CACHE_TTL_MS,
+    };
+    return [];
+  }
+}
+
+function isGeminiNotFoundError(error: unknown): boolean {
+  if (
+    error instanceof GoogleGenerativeAIFetchError &&
+    error.status === 404
+  ) {
+    return true;
+  }
+
+  if (
+    typeof error === 'object' &&
+    error !== null &&
+    'status' in error &&
+    (error as { status?: number }).status === 404
+  ) {
+    return true;
+  }
+
+  if (
+    typeof error === 'object' &&
+    error !== null &&
+    'statusCode' in error &&
+    (error as { statusCode?: number }).statusCode === 404
+  ) {
+    return true;
+  }
+
+  if (error instanceof Error && /\b404\b/.test(error.message)) {
+    return true;
+  }
+
+  return false;
 }
 
 /**
@@ -144,15 +288,72 @@ export async function queryGPT4(question: string): Promise<string> {
  * Query Gemini (Google)
  */
 export async function queryGemini(question: string): Promise<string> {
-  try {
-    const model = getGeminiClient().getGenerativeModel({ model: 'gemini-pro' });
-    const result = await model.generateContent(createRankingPrompt(question));
-    const response = await result.response;
-    return response.text();
-  } catch (error) {
-    console.error('Error querying Gemini:', error);
-    throw error;
+  const attemptedModels: string[] = [];
+  let lastError: unknown;
+  let sawNotFound = false;
+
+  for (const modelName of GEMINI_MODEL_CANDIDATES) {
+    if (unavailableGeminiModels.has(modelName)) {
+      continue;
+    }
+
+    attemptedModels.push(modelName);
+
+    try {
+      const model = getGeminiModel(modelName);
+      const result = await model.generateContent({
+        contents: [
+          {
+            role: 'user',
+            parts: [{ text: createRankingPrompt(question) }],
+          },
+        ],
+      });
+      const response = await result.response;
+      return response.text();
+    } catch (error) {
+      lastError = error;
+
+      if (isGeminiNotFoundError(error)) {
+        unavailableGeminiModels.add(modelName);
+        geminiModelCache.delete(modelName);
+        sawNotFound = true;
+        console.warn(
+          `Gemini model ${modelName} not available (404). Trying next candidate...`
+        );
+        continue;
+      }
+
+      console.error(`Error querying Gemini model ${modelName}:`, error);
+      throw error;
+    }
   }
+
+  const availableModels = await getAvailableGeminiModelIds(sawNotFound);
+  const attemptedList =
+    attemptedModels.length > 0
+      ? attemptedModels.join(', ')
+      : GEMINI_MODEL_CANDIDATES.join(', ');
+  const availableList =
+    availableModels.length > 0
+      ? availableModels.join(', ')
+      : 'none reported';
+
+  const errorParts = [
+    `Gemini request failed: no configured model (${attemptedList}) is available.`,
+  ];
+
+  if (availableModels.length > 0) {
+    errorParts.push(`API reported available models: ${availableList}.`);
+  } else {
+    errorParts.push('API did not report any available models.');
+  }
+
+  if (lastError instanceof Error) {
+    errorParts.push(`Last error: ${lastError.message}`);
+  }
+
+  throw new Error(errorParts.join(' '));
 }
 
 /**

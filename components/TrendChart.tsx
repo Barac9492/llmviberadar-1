@@ -19,14 +19,23 @@ interface TrendChartProps {
   itemName?: string; // Optional: track a specific item across models
 }
 
+interface ChartDataPoint {
+  date: string;
+  timestamp: string;
+  [model: string]: string | number | null;
+}
+
 /**
  * Transform timeline data for Recharts
  * If itemName is provided, track that item's rank across models
  * Otherwise, show all rankings
  */
-function transformDataForChart(timeline: TimelinePoint[], itemName?: string) {
+function transformDataForChart(
+  timeline: TimelinePoint[],
+  itemName?: string
+): ChartDataPoint[] {
   return timeline.map((point) => {
-    const dataPoint: any = {
+    const dataPoint: ChartDataPoint = {
       date: format(new Date(point.timestamp), 'MMM dd'),
       timestamp: point.timestamp,
     };

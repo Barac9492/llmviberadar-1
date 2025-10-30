@@ -2,7 +2,6 @@ import { createClient } from '@supabase/supabase-js';
 import {
   Query,
   Response,
-  Ranking,
   QueryWithLatestRankings,
   HistoricalData,
   RankingItem,

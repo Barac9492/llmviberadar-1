@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { getHistoricalData, getLatestRankings, getQueryById } from '@/lib/db';
+import { getHistoricalData, getLatestRankings } from '@/lib/db';
 import TrendChart from '@/components/TrendChart';
 import ModelComparison from '@/components/ModelComparison';
 import { CATEGORY_COLORS } from '@/lib/constants';
@@ -77,7 +77,7 @@ export default async function QueryPage({ params }: QueryPageProps) {
               Collecting data...
             </h2>
             <p className="text-gray-600">
-              This query hasn't been run yet. Data will appear after the first
+              This query hasn&apos;t been run yet. Data will appear after the first
               daily update.
             </p>
           </div>
