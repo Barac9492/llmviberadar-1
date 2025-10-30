@@ -6,18 +6,13 @@ import { AIModelConfig, QueryCategory } from '@/types';
 export const AI_MODELS: { [key: string]: AIModelConfig } = {
   claude: {
     name: 'claude',
-    displayName: 'Claude',
+    displayName: 'Claude Sonnet 4.5',
     color: '#D97706', // amber-600
   },
   'gpt-4': {
     name: 'gpt-4',
-    displayName: 'GPT-4',
+    displayName: 'GPT-4 Turbo',
     color: '#10B981', // emerald-500
-  },
-  gemini: {
-    name: 'gemini',
-    displayName: 'Gemini',
-    color: '#3B82F6', // blue-500
   },
 };
 
@@ -25,22 +20,22 @@ export const AI_MODELS: { [key: string]: AIModelConfig } = {
  * Query categories
  */
 export const CATEGORIES: QueryCategory[] = [
-  'Food & Restaurants',
-  'Tech & Products',
-  'Politics & Society',
-  'Entertainment',
-  'Career & Education',
+  'Developer Tools',
+  'Business Tools',
+  'Consumer Tech',
+  'Services',
+  'Emerging Tech',
 ];
 
 /**
  * Category colors for UI
  */
 export const CATEGORY_COLORS: { [key in QueryCategory]: string } = {
-  'Food & Restaurants': 'bg-orange-100 text-orange-800',
-  'Tech & Products': 'bg-blue-100 text-blue-800',
-  'Politics & Society': 'bg-purple-100 text-purple-800',
-  'Entertainment': 'bg-pink-100 text-pink-800',
-  'Career & Education': 'bg-green-100 text-green-800',
+  'Developer Tools': 'bg-blue-100 text-blue-800',
+  'Business Tools': 'bg-purple-100 text-purple-800',
+  'Consumer Tech': 'bg-orange-100 text-orange-800',
+  'Services': 'bg-green-100 text-green-800',
+  'Emerging Tech': 'bg-pink-100 text-pink-800',
 };
 
 /**
