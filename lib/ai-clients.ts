@@ -289,14 +289,16 @@ export async function queryGPT4(question: string): Promise<string> {
  */
 export async function queryGemini(question: string): Promise<string> {
   const attemptedModels: string[] = [];
+  const attemptedSet = new Set<string>();
   let lastError: unknown;
   let sawNotFound = false;
 
-  for (const modelName of GEMINI_MODEL_CANDIDATES) {
-    if (unavailableGeminiModels.has(modelName)) {
-      continue;
+  const tryModel = async (modelName: string): Promise<string | null> => {
+    if (attemptedSet.has(modelName) || unavailableGeminiModels.has(modelName)) {
+      return null;
     }
 
+    attemptedSet.add(modelName);
     attemptedModels.push(modelName);
 
     try {
@@ -321,15 +323,30 @@ export async function queryGemini(question: string): Promise<string> {
         console.warn(
           `Gemini model ${modelName} not available (404). Trying next candidate...`
         );
-        continue;
+        return null;
       }
 
       console.error(`Error querying Gemini model ${modelName}:`, error);
       throw error;
     }
+  };
+
+  for (const modelName of GEMINI_MODEL_CANDIDATES) {
+    const response = await tryModel(modelName);
+    if (typeof response === 'string') {
+      return response;
+    }
   }
 
   const availableModels = await getAvailableGeminiModelIds(sawNotFound);
+
+  for (const modelName of availableModels) {
+    const response = await tryModel(modelName);
+    if (typeof response === 'string') {
+      return response;
+    }
+  }
+
   const attemptedList =
     attemptedModels.length > 0
       ? attemptedModels.join(', ')
