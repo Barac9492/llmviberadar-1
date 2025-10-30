@@ -12,7 +12,45 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY || '',
 });
 
-const genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY || '');
+const GEMINI_KEY_ENV_VARS = [
+  'GEMINI_API_KEY',
+  'GOOGLE_AI_API_KEY',
+  'GOOGLE_API_KEY',
+  'GOOGLE_GENAI_API_KEY',
+  'NEXT_PUBLIC_GEMINI_API_KEY',
+  'NEXT_PUBLIC_GOOGLE_AI_API_KEY',
+  'NEXT_PUBLIC_GOOGLE_API_KEY',
+  'NEXT_PUBLIC_GOOGLE_GENAI_API_KEY',
+] as const;
+
+let genAI: GoogleGenerativeAI | null = null;
+
+function resolveEnvValue(keys: readonly string[]): string | undefined {
+  for (const key of keys) {
+    const value = process.env[key];
+    if (typeof value === 'string' && value.trim()) {
+      return value.trim();
+    }
+  }
+
+  return undefined;
+}
+
+function getGeminiClient(): GoogleGenerativeAI {
+  if (!genAI) {
+    const geminiApiKey = resolveEnvValue(GEMINI_KEY_ENV_VARS);
+
+    if (!geminiApiKey) {
+      throw new Error(
+        `Missing Gemini API key. Set one of: ${GEMINI_KEY_ENV_VARS.join(', ')}.`
+      );
+    }
+
+    genAI = new GoogleGenerativeAI(geminiApiKey);
+  }
+
+  return genAI;
+}
 
 /**
  * Create a structured prompt for ranking queries
@@ -107,7 +145,7 @@ export async function queryGPT4(question: string): Promise<string> {
  */
 export async function queryGemini(question: string): Promise<string> {
   try {
-    const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
+    const model = getGeminiClient().getGenerativeModel({ model: 'gemini-pro' });
     const result = await model.generateContent(createRankingPrompt(question));
     const response = await result.response;
     return response.text();
