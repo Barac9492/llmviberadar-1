@@ -92,19 +92,19 @@ export default function AboutPage() {
               <div className="border border-gray-200 rounded-lg p-4">
                 <h3 className="font-semibold text-gray-900 mb-2">Claude</h3>
                 <p className="text-sm text-gray-600">
-                  Anthropic's Claude 3.5 Sonnet
+                  Anthropic&apos;s Claude 3.5 Sonnet
                 </p>
               </div>
               <div className="border border-gray-200 rounded-lg p-4">
                 <h3 className="font-semibold text-gray-900 mb-2">GPT-4</h3>
                 <p className="text-sm text-gray-600">
-                  OpenAI's GPT-4 Turbo
+                  OpenAI&apos;s GPT-4 Turbo
                 </p>
               </div>
               <div className="border border-gray-200 rounded-lg p-4">
                 <h3 className="font-semibold text-gray-900 mb-2">Gemini</h3>
                 <p className="text-sm text-gray-600">
-                  Google's Gemini Pro
+                  Google&apos;s Gemini Pro
                 </p>
               </div>
             </div>
@@ -188,7 +188,7 @@ export default function AboutPage() {
                   Can I suggest a query to track?
                 </h3>
                 <p className="text-gray-700">
-                  Custom query submission is coming soon! For now, we're
+                  Custom query submission is coming soon! For now, we&apos;re
                   tracking a curated set of interesting questions.
                 </p>
               </div>
