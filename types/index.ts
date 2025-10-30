@@ -58,8 +58,8 @@ export interface AIModelConfig {
 
 // Categories
 export type QueryCategory =
-  | 'Developer Tools'
-  | 'Business Tools'
-  | 'Consumer Tech'
-  | 'Services'
-  | 'Emerging Tech';
+  | 'Korean Tech'
+  | 'Korean Culture'
+  | 'Korean Lifestyle'
+  | 'Korean Tourism'
+  | 'Korean Innovation';

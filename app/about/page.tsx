@@ -13,10 +13,10 @@ export default function AboutPage() {
             ← Back to home
           </Link>
           <h1 className="text-4xl font-bold text-gray-900 mb-2">
-            About LLM Vibes Radar
+            Korea AI Perception Tracker
           </h1>
           <p className="text-lg text-gray-600">
-            Understanding our methodology and mission
+            Tracking how AI models view Korea, Korean brands, and Korean culture
           </p>
         </div>
       </header>
