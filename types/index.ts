@@ -58,8 +58,7 @@ export interface AIModelConfig {
 
 // Categories
 export type QueryCategory =
-  | 'Korean Tech'
-  | 'Korean Culture'
-  | 'Korean Lifestyle'
-  | 'Korean Tourism'
-  | 'Korean Innovation';
+  | 'K-Beauty'
+  | 'K-Food'
+  | 'K-Pop'
+  | 'K-Electronics';
