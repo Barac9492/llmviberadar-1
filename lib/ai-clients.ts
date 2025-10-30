@@ -29,20 +29,6 @@ const GEMINI_KEY_ENV_VARS = [
 
 let genAI: GoogleGenerativeAI | null = null;
 const geminiModelCache = new Map<string, GenerativeModel>();
-let geminiApiKey: string | null = null;
-const unavailableGeminiModels = new Set<string>();
-
-const GEMINI_MODEL_LIST_ENDPOINT =
-  'https://generativelanguage.googleapis.com/v1beta/models';
-const GEMINI_MODEL_LIST_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
-const GEMINI_MODEL_LIST_ERROR_CACHE_TTL_MS = 60 * 1000; // 1 minute
-
-type GeminiModelListCache = {
-  ids: string[];
-  expiresAt: number;
-};
-
-let geminiModelListCache: GeminiModelListCache | null = null;
 
 const GEMINI_MODEL_CANDIDATES = [
   'gemini-1.5-pro-latest',
@@ -196,6 +182,20 @@ function isGeminiNotFoundError(error: unknown): boolean {
   return false;
 }
 
+function getGeminiModel(modelName: string): GenerativeModel {
+  const cachedModel = geminiModelCache.get(modelName);
+  if (cachedModel) {
+    return cachedModel;
+  }
+
+  const model = getGeminiClient().getGenerativeModel({
+    model: modelName,
+  });
+
+  geminiModelCache.set(modelName, model);
+  return model;
+}
+
 /**
  * Create a structured prompt for ranking queries
  */
@@ -288,19 +288,7 @@ export async function queryGPT4(question: string): Promise<string> {
  * Query Gemini (Google)
  */
 export async function queryGemini(question: string): Promise<string> {
-  const attemptedModels: string[] = [];
-  const attemptedSet = new Set<string>();
-  let lastError: unknown;
-  let sawNotFound = false;
-
-  const tryModel = async (modelName: string): Promise<string | null> => {
-    if (attemptedSet.has(modelName) || unavailableGeminiModels.has(modelName)) {
-      return null;
-    }
-
-    attemptedSet.add(modelName);
-    attemptedModels.push(modelName);
-
+  for (const modelName of GEMINI_MODEL_CANDIDATES) {
     try {
       const model = getGeminiModel(modelName);
       const result = await model.generateContent({
@@ -314,63 +302,26 @@ export async function queryGemini(question: string): Promise<string> {
       const response = await result.response;
       return response.text();
     } catch (error) {
-      lastError = error;
-
-      if (isGeminiNotFoundError(error)) {
-        unavailableGeminiModels.add(modelName);
-        geminiModelCache.delete(modelName);
-        sawNotFound = true;
+      if (
+        error instanceof GoogleGenerativeAIFetchError &&
+        error.status === 404
+      ) {
         console.warn(
           `Gemini model ${modelName} not available (404). Trying next candidate...`
         );
-        return null;
+        continue;
       }
 
       console.error(`Error querying Gemini model ${modelName}:`, error);
       throw error;
     }
-  };
-
-  for (const modelName of GEMINI_MODEL_CANDIDATES) {
-    const response = await tryModel(modelName);
-    if (typeof response === 'string') {
-      return response;
-    }
   }
 
-  const availableModels = await getAvailableGeminiModelIds(sawNotFound);
-
-  for (const modelName of availableModels) {
-    const response = await tryModel(modelName);
-    if (typeof response === 'string') {
-      return response;
-    }
-  }
-
-  const attemptedList =
-    attemptedModels.length > 0
-      ? attemptedModels.join(', ')
-      : GEMINI_MODEL_CANDIDATES.join(', ');
-  const availableList =
-    availableModels.length > 0
-      ? availableModels.join(', ')
-      : 'none reported';
-
-  const errorParts = [
-    `Gemini request failed: no configured model (${attemptedList}) is available.`,
-  ];
-
-  if (availableModels.length > 0) {
-    errorParts.push(`API reported available models: ${availableList}.`);
-  } else {
-    errorParts.push('API did not report any available models.');
-  }
-
-  if (lastError instanceof Error) {
-    errorParts.push(`Last error: ${lastError.message}`);
-  }
-
-  throw new Error(errorParts.join(' '));
+  throw new Error(
+    `Gemini request failed: no configured model (${GEMINI_MODEL_CANDIDATES.join(
+      ', '
+    )}) is available.`
+  );
 }
 
 /**
