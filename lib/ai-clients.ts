@@ -47,20 +47,139 @@ function resolveEnvValue(keys: readonly string[]): string | undefined {
   return undefined;
 }
 
+function getGeminiApiKey(): string {
+  if (geminiApiKey) {
+    return geminiApiKey;
+  }
+
+  const resolvedKey = resolveEnvValue(GEMINI_KEY_ENV_VARS);
+
+  if (!resolvedKey) {
+    throw new Error(
+      `Missing Gemini API key. Set one of: ${GEMINI_KEY_ENV_VARS.join(', ')}.`
+    );
+  }
+
+  geminiApiKey = resolvedKey;
+  return geminiApiKey;
+}
+
 function getGeminiClient(): GoogleGenerativeAI {
   if (!genAI) {
-    const geminiApiKey = resolveEnvValue(GEMINI_KEY_ENV_VARS);
-
-    if (!geminiApiKey) {
-      throw new Error(
-        `Missing Gemini API key. Set one of: ${GEMINI_KEY_ENV_VARS.join(', ')}.`
-      );
-    }
-
-    genAI = new GoogleGenerativeAI(geminiApiKey);
+    genAI = new GoogleGenerativeAI(getGeminiApiKey());
   }
 
   return genAI;
+}
+
+function getGeminiModel(modelName: string): GenerativeModel {
+  const cachedModel = geminiModelCache.get(modelName);
+  if (cachedModel) {
+    return cachedModel;
+  }
+
+  const model = getGeminiClient().getGenerativeModel({
+    model: modelName,
+  });
+
+  geminiModelCache.set(modelName, model);
+  return model;
+}
+
+function parseGeminiModelId(modelName?: string): string | null {
+  if (!modelName) {
+    return null;
+  }
+
+  const parts = modelName.split('/');
+  const parsed = parts[parts.length - 1];
+
+  return parsed?.trim() ? parsed.trim() : null;
+}
+
+async function getAvailableGeminiModelIds(
+  forceRefresh: boolean = false
+): Promise<string[]> {
+  const now = Date.now();
+
+  if (!forceRefresh && geminiModelListCache && geminiModelListCache.expiresAt > now) {
+    return geminiModelListCache.ids;
+  }
+
+  const url = new URL(GEMINI_MODEL_LIST_ENDPOINT);
+  url.searchParams.set('key', getGeminiApiKey());
+
+  try {
+    const response = await fetch(url.toString());
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.warn(
+        `Failed to list Gemini models (${response.status} ${response.statusText}): ${errorText}`
+      );
+      geminiModelListCache = {
+        ids: [],
+        expiresAt: now + GEMINI_MODEL_LIST_ERROR_CACHE_TTL_MS,
+      };
+      return [];
+    }
+
+    const data = (await response.json()) as {
+      models?: { name?: string }[];
+    };
+
+    const ids =
+      data.models
+        ?.map((model) => parseGeminiModelId(model.name))
+        .filter((modelName): modelName is string => Boolean(modelName)) ?? [];
+
+    geminiModelListCache = {
+      ids,
+      expiresAt: now + GEMINI_MODEL_LIST_CACHE_TTL_MS,
+    };
+
+    return ids;
+  } catch (error) {
+    console.warn('Failed to fetch Gemini model list:', error);
+    geminiModelListCache = {
+      ids: [],
+      expiresAt: now + GEMINI_MODEL_LIST_ERROR_CACHE_TTL_MS,
+    };
+    return [];
+  }
+}
+
+function isGeminiNotFoundError(error: unknown): boolean {
+  if (
+    error instanceof GoogleGenerativeAIFetchError &&
+    error.status === 404
+  ) {
+    return true;
+  }
+
+  if (
+    typeof error === 'object' &&
+    error !== null &&
+    'status' in error &&
+    (error as { status?: number }).status === 404
+  ) {
+    return true;
+  }
+
+  if (
+    typeof error === 'object' &&
+    error !== null &&
+    'statusCode' in error &&
+    (error as { statusCode?: number }).statusCode === 404
+  ) {
+    return true;
+  }
+
+  if (error instanceof Error && /\b404\b/.test(error.message)) {
+    return true;
+  }
+
+  return false;
 }
 
 function getGeminiModel(modelName: string): GenerativeModel {
