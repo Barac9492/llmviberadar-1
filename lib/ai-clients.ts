@@ -166,7 +166,7 @@ export async function queryGPT4(question: string): Promise<string> {
 }
 
 /**
- * Query Gemini (Google)
+ * Query Gemini (Google) - Updated with new API key
  */
 export async function queryGemini(question: string): Promise<string> {
   for (const modelName of GEMINI_MODEL_CANDIDATES) {
