@@ -83,16 +83,31 @@ export default async function QueryPage({ params }: QueryPageProps) {
           </div>
         ) : (
           <div className="space-y-8">
-            {/* Trend Chart Section */}
-            <section className="bg-white rounded-lg shadow-sm p-8">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">
-                Ranking Trends (Last 30 Days)
-              </h2>
-              <TrendChart timeline={timeline} />
-              <p className="text-sm text-gray-500 mt-4">
-                Lower rank number = higher position. Rank 1 is the top choice.
-              </p>
-            </section>
+            {/* Trend Chart Section - Only show if we have 3+ days of data */}
+            {timeline.length >= 3 ? (
+              <section className="bg-white rounded-lg shadow-sm p-8">
+                <h2 className="text-2xl font-bold text-gray-900 mb-6">
+                  Ranking Trends ({timeline.length} days)
+                </h2>
+                <TrendChart timeline={timeline} />
+                <p className="text-sm text-gray-500 mt-4">
+                  Lower rank number = higher position. Rank 1 is the top choice.
+                </p>
+              </section>
+            ) : (
+              <section className="bg-blue-50 rounded-lg p-6 border border-blue-200">
+                <h2 className="text-xl font-semibold text-gray-900 mb-3">
+                  📊 Historical Trends Coming Soon
+                </h2>
+                <p className="text-gray-700 mb-2">
+                  Ranking trends will appear after collecting 3+ days of data.
+                </p>
+                <p className="text-sm text-gray-600">
+                  <strong>Data collected:</strong> {timeline.length} day(s) •
+                  <strong> First collection:</strong> {timeline.length > 0 ? new Date(timeline[0]?.timestamp).toLocaleDateString() : 'N/A'}
+                </p>
+              </section>
+            )}
 
             {/* Current Rankings Comparison */}
             <section className="bg-white rounded-lg shadow-sm p-8">
@@ -108,18 +123,19 @@ export default async function QueryPage({ params }: QueryPageProps) {
                 About This Query
               </h3>
               <p className="text-gray-700 mb-4">
-                This query is run daily across multiple AI models. The chart
-                above shows how rankings change over time, revealing shifts in
-                AI opinions and potential biases.
+                This query runs daily across Claude Sonnet 4.5 and GPT-4 Turbo.
+                {timeline.length >= 3
+                  ? ' The chart tracks how each AI model ranks the #1 choice over time, revealing shifts in AI opinions.'
+                  : ' Historical trend charts will show ranking changes after collecting 3+ days of data.'}
               </p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                 <div>
                   <span className="font-semibold">Models tracked:</span>{' '}
-                  {Object.keys(latestRankings).join(', ')}
+                  Claude Sonnet 4.5, GPT-4 Turbo
                 </div>
                 <div>
-                  <span className="font-semibold">Data points:</span>{' '}
-                  {timeline.length} days
+                  <span className="font-semibold">Data collected:</span>{' '}
+                  {timeline.length} day(s)
                 </div>
               </div>
             </section>
