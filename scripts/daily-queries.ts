@@ -63,7 +63,7 @@ async function runDailyQueries() {
           }
 
           // Add a small delay to avoid rate limits
-          await new Promise((resolve) => setTimeout(resolve, 2000));
+          await new Promise((resolve) => setTimeout(resolve, 1000));
         } catch (error) {
           console.error(`  ✗ Error querying ${modelName}:`, error);
           // Continue with next model even if one fails
