@@ -30,10 +30,11 @@ export default function AboutPage() {
               Our Mission
             </h2>
             <p className="text-gray-700 leading-relaxed">
-              LLM Vibes Radar tracks which brands and products AI models recommend.
-              We reveal which companies have the strongest &quot;AI mindshare&quot; and how
-              these recommendations change over time. Think of it as SEO for the AI age -
-              helping businesses understand their visibility in AI-powered recommendations.
+              Korea AI Perception Tracker reveals how the world&apos;s leading AI models
+              (Claude Sonnet 4.5 and GPT-4 Turbo) rank Korean brands, culture, and innovation.
+              We track Korea&apos;s &quot;AI mindshare&quot; - from Samsung vs Apple, to K-pop&apos;s
+              global influence, to Korean cuisine rankings. Essential intelligence for Korean
+              companies, investors, and anyone tracking Korea&apos;s global brand strength.
             </p>
           </section>
 
@@ -48,8 +49,8 @@ export default function AboutPage() {
                   1. Daily Queries
                 </h3>
                 <p>
-                  We run product and service ranking questions across Claude Sonnet 4.5
-                  and GPT-4 Turbo every 24 hours to track which brands they recommend.
+                  We ask Claude Sonnet 4.5 and GPT-4 Turbo 25 Korea-focused questions
+                  every 24 hours - covering technology, culture, tourism, and innovation.
                 </p>
               </div>
               <div>
@@ -112,29 +113,36 @@ export default function AboutPage() {
               <div className="flex items-start">
                 <span className="text-blue-600 mr-2">•</span>
                 <p>
-                  <strong>Product & Marketing Teams</strong> - Track your brand&apos;s AI visibility
-                  and monitor competitive positioning
+                  <strong>Korean Companies</strong> - Samsung, LG, Hyundai, HYBE, Naver -
+                  track how AI models rank you vs global competitors
                 </p>
               </div>
               <div className="flex items-start">
                 <span className="text-blue-600 mr-2">•</span>
                 <p>
-                  <strong>Investors & Analysts</strong> - Identify which brands are winning
-                  AI mindshare before it shows in market metrics
+                  <strong>Korean Tourism & Government</strong> - Monitor Korea&apos;s global
+                  brand perception and identify opportunities to improve AI visibility
                 </p>
               </div>
               <div className="flex items-start">
                 <span className="text-blue-600 mr-2">•</span>
                 <p>
-                  <strong>Developers & Founders</strong> - Optimize your product for AI
-                  recommendation engines and track AI SEO performance
+                  <strong>K-pop Agencies & Entertainment</strong> - Track cultural influence
+                  and how AI models rank Korean entertainment globally
                 </p>
               </div>
               <div className="flex items-start">
                 <span className="text-blue-600 mr-2">•</span>
                 <p>
-                  <strong>Tech Enthusiasts</strong> - Discover which products AI models
-                  consistently recommend and compare their preferences
+                  <strong>Investors & Analysts</strong> - Gauge Korea&apos;s brand strength
+                  in tech, culture, and innovation before it shows in market data
+                </p>
+              </div>
+              <div className="flex items-start">
+                <span className="text-blue-600 mr-2">•</span>
+                <p>
+                  <strong>Korean Startups & Founders</strong> - Understand global positioning
+                  and optimize for AI-powered discovery
                 </p>
               </div>
             </div>
@@ -202,7 +210,7 @@ export default function AboutPage() {
       <footer className="bg-white border-t border-gray-200 mt-16">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 text-center text-gray-600">
           <p>
-            LLM Vibes Radar - Tracking Brand AI Mindshare Across Leading Models
+            Korea AI Perception Tracker - 한국의 AI 브랜드 파워 추적
           </p>
         </div>
       </footer>
