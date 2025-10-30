@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getHistoricalData, getLatestRankings } from '@/lib/db';
+import { getHistoricalData } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 
