@@ -20,6 +20,14 @@ export default function AdminPage() {
         },
       });
 
+      // Check if response is JSON
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const text = await response.text();
+        setStatus(`❌ Error: Server returned non-JSON response\n${text.substring(0, 200)}...`);
+        return;
+      }
+
       const data = await response.json();
 
       if (response.ok) {
@@ -42,8 +50,8 @@ export default function AdminPage() {
             Admin Panel
           </h1>
           <p className="text-gray-600 mb-8">
-            Manually trigger the daily AI queries. This will query all 20
-            questions across Claude, GPT-4, and Gemini.
+            Manually trigger the daily AI queries. This will query all questions
+            across Claude Sonnet 4.5 and GPT-4 Turbo.
           </p>
 
           <button
@@ -75,10 +83,9 @@ export default function AdminPage() {
           <div className="mt-8 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
             <h3 className="font-semibold text-yellow-900 mb-2">⚠️ Note:</h3>
             <ul className="text-sm text-yellow-800 space-y-1">
-              <li>• This process takes 2-5 minutes</li>
-              <li>• It makes 60 API calls (20 queries × 3 models)</li>
-              <li>• Costs approximately $0.50-1.00 per run</li>
+              <li>• This process takes 1-3 minutes</li>
               <li>• Results are saved to the database</li>
+              <li>• Check logs below for real-time progress</li>
             </ul>
           </div>
 
