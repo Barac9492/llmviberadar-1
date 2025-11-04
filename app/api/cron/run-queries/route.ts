@@ -11,22 +11,17 @@ export const maxDuration = 300; // 5 minutes max for cron job
  */
 export async function POST(request: Request) {
   try {
-    // Verify the cron secret
+    // Verify the request is from Vercel Cron or authorized
     const authHeader = request.headers.get('authorization');
     const expectedSecret = process.env.CRON_SECRET;
 
-    if (!expectedSecret) {
-      console.error('CRON_SECRET not configured');
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Server configuration error',
-        },
-        { status: 500 }
-      );
-    }
+    // Check if request is from Vercel Cron (automatic cron jobs)
+    const isVercelCron = request.headers.get('user-agent')?.includes('vercel-cron');
 
-    if (authHeader !== `Bearer ${expectedSecret}`) {
+    // Allow if it's from Vercel Cron OR has valid auth header
+    const isAuthorized = isVercelCron || authHeader === `Bearer ${expectedSecret}`;
+
+    if (!isAuthorized) {
       console.warn('Unauthorized cron request');
       return NextResponse.json(
         {
